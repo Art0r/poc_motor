@@ -1,0 +1,39 @@
+services:
+  producer:
+    build: 
+      context: ./ 
+    ports:
+      - "3000:3000"
+    environment:
+      APP: producer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  consumer:
+    build: 
+      context: ./
+    ports:
+      - "3001:3001"
+    environment:
+      APP: consumer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure  
+
+  rabbitmq:
+    image: rabbitmq:4.2.3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s 
