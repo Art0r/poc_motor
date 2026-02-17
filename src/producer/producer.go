@@ -10,7 +10,7 @@ func Start() {
 	app := fiber.New()
 
 	app.Get("/", func(c fiber.Ctx) error {
-		SendMessage()
+		SendMessage("hello", "Ola Mundo")
 		return c.SendString("Producer")
 	})
 
