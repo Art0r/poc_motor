@@ -2,6 +2,7 @@ package producer
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -9,24 +10,35 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func SendMessage(queue_name string, msg_text string) {
+func SendMessage(queue_name string, msg Data) {
 	common.WrapMessageAction(
 		queue_name,
 		func(queue *amqp.Queue, channel *amqp.Channel) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
-			channel.PublishWithContext(ctx,
+			body, err := json.Marshal(msg)
+			if err != nil {
+				log.Printf("Error marshaling JSON: %s", err)
+				return
+			}
+
+			err = channel.PublishWithContext(ctx,
 				"",         // exchange
 				queue.Name, // routing key
-
-				false, // mandatory
-				false, // immediate
+				false,      // mandatory
+				false,      // immediate
 				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte(msg_text),
+					ContentType: "application/json",
+					Body:        []byte(body),
 				})
-			log.Printf(" [x] Sent %s\n", msg_text)
+
+			if err != nil {
+				log.Printf("Error publishing message: %s", err)
+				return
+			}
+
+			log.Printf(" [x] Sent %s\n", msg)
 		},
 	)
 }
